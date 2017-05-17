@@ -1,0 +1,298 @@
+# C-Sharp
+## 泛型的概念
+
+泛型（Generic）：广泛的类型。
+
+注意这只是直译的概念。
+
+## 泛型的由来
+
+我们知道C#中存在很多种数据类型（回顾C#数据类型），并且C#是强类型语言。换句话说，C#中的数据类型不能随意的进行准换，这时候很容易出现问题，请往下看。
+
+我们都知道，因为之前学的所有集合中的所有的方法都是对Object类型进行操作的，也就是任何数据类型被添加到集合中都会变成Object类型，所以我们可以在集合中添加任意类型：
+```c#
+class Demo
+{
+  static void Main()
+  {
+    ArrayList al = new ArrayList();
+    al.Add("旺财"); //添加string类型
+    al.Add("小强");
+    al.Add("三胖"); 
+  }
+}
+```
+但是我们应该注意的是，集合的作用不仅仅是存储，存完了我们还要取出（或者叫使用）里面的数据。对于集合的操作无非就是增删查改，所以当取出的时候会出现问题。上面的代码中，我们存储了3个字符串类型，他们添加到集合中时都会变成Object类型。遍历时都是没有问题的，我们看一下使用集合中具体元素的内容，我们要打印出每个字符串的长度(都是2)，正常情况下可以这样：
+
+```c#
+class Demo
+{
+  static void Main()
+  {
+    ArrayList al = new ArrayList();
+    al.Add("旺财"); //添加string类型
+    al.Add("小强");
+    al.Add("三胖");
+	
+    for (int i = 0; i < al.Count; i++ )   //这时候循环条件需要小于集合的元素数量
+    {
+      Console.WriteLine(al[i].Lenght);  //打印出每个元素中的Lenght属性，会报错
+    }
+  }
+}
+```
+写完代码后，编译器报错为：“object”不包含“Length”的定义，并且找不到可接受类型为“object”的第一个参数的扩展方法“Length”(是否缺少 using 指令或程序集引用?)
+
+这是因为，当向集合中添加元素后，string类型的字符串会自动类型提升为Object类型，洽洽Object类型中是没有Length属性的。这时候应该怎么办呢？我们可以再将Object类型转到string类型：
+
+```c#
+class Demo
+{
+  static void Main()
+  {
+    ArrayList al = new ArrayList();
+    al.Add("旺财"); //添加string类型
+    al.Add("小强");
+    al.Add("三胖");
+	
+    for (int i = 0; i < al.Count; i++ )
+    {
+//在集合中每一个元素都是object类型，所以要进行向下转型，使用元素的特有功能。
+      string str = (string)al[i];
+      Console.WriteLine(str.Length);    //输出结果是三个2
+    }
+  }
+}
+```
+这样很容易解决问题，但是问题不止于此，大家别忘了ArrayList可以接收任何类型，所以：
+```c#
+class Demo
+{
+  static void Main()
+  {
+    ArrayList al = new ArrayList();
+    al.Add("旺财"); //添加string类型
+    al.Add("小强");
+    al.Add(10);//添加int类型
+  }
+}
+```
+我们还按照上面的解决方式：
+```c#
+class Demo
+{
+  static void Main()
+  {
+    ArrayList al = new ArrayList();
+    al.Add("旺财"); //添加string类型
+    al.Add("小强");
+    al.Add(10);//添加int类型
+    for (int i = 0; i < al.Count; i++ )
+    {
+//在集合中每一个元素都是object类型，所以要进行向下转型，使用特有功能。
+      string str = (string)al[i];
+      Console.WriteLine(str.Length);
+    }
+  }
+}
+```
+发现编译器并没有报错，问题好像解决。但是当运行以后会报错，出现异常InvalidCastException（类型转换异常）。这是为什么呢？
+
+原来，C#编译器只针对于语法错误报错，但以上代码在语法上并没有错误，所以编译器不会报错。但是当运行时程序是有问题的，20无法直接转换成string类型（相当于学多态时将猫转换成狗，这是不成立的），这就是类型转换异常。
+
+问题出现最根本的原因是，ArrayList以及之前学过的其他集合都是对Object进行操作，可以接收任何类型，但是当向下转型时我们无法保证集合中所有元素的类型都是一样的，并且编译器无法检测出错误，只能运行时才知道，这就出现了隐患。所以，泛型就出现了。泛型可以使得我们在类、方法、接口中从众多数据类型里指定一个具体的类型并使用，来保证类型的统一。我们先来用List泛型集合来演示一下：
+
+```c#
+class Demo
+{
+  static void Main()
+  {
+  /*
+  通过List<>泛型集合类，可以规定在声明集合的时候具体操作什么类型，
+  确保类型的安全。在这里指定使用string类型，写在尖括号里面，
+  表示这个集合只能存放string类型，也不会通过向上转型提升为Object类型了
+  */
+    List<string> list = new List<string>();
+    list.Add("旺财");//注意代码提示中Add方法的参数都变为string类型
+    list.Add("小强");
+    list.Add("三胖");
+    //list.Add(10);  添加int类型会直接报错而不是等到运行时期
+	
+	//使用foreach遍历集合list
+    foreach(string item in list) {
+      Console.WriteLine(item);
+    }
+	//使用for循环遍历list集合，不需要强制转换
+	for(int i = 0; i < list.Count; i++ ) {
+      //string str = (string)list[i];//使用泛型后省去了强制转换的烦恼
+      Console.WriteLine(list[i].Length);
+    }
+  }
+}
+```
+这就是泛型最直观的作用。在定义类的时候定义为List，其中T表示泛型，表示可以指定各种类型，但是只能指定一种。那么当声明这个类的对象的时候，需要具体指定这一种类型，表示这个对象只操作指定的类型，有其他的类型会直接报错。
+
+当我们使用集合里面的数据时，也会很方便：
+```c#
+class Demo
+{
+  static void Main()
+  {
+    List<string> list = new List<string>();
+    list.Add("旺财");//注意代码提示中Add方法的参数都变为string类型
+    list.Add("小强");
+    list.Add("三胖");
+
+    for (int i = 0; i < list.Count; i++)
+    {
+     //string str = (string)al[i];   省去了自动类型提升和强制类型转换的步骤
+     Console.WriteLine(list[i].Length);    //可以直接使用每个元素中的Length属性
+    }
+  }
+}
+```
+常见的集合一般分为非泛型集合和泛型集合。之前学习的存在于System.Collections命名空间中的集合都是非泛型集合，是C#中最早出现的集合。而泛型集合存在与System.Collections.Generic命名空间中，这个命名空间里面都是泛型集合。List就在此。大多数的非泛型集合都有对应的泛型集合，比如ArrayList对应List，Hashtable对应Dictionary<T, T>等等。
+
+## 泛型的特点
+
+根据以上的说明，我们可以总结出泛型的以下几个特点：
+
+* .NET Framework 2.0后出现的一种类型安全机制。
+* 泛型的出现将运行时的问题转到了编译时期。
+* 避免了装箱拆箱的麻烦，极大提高了效率。
+
+## 泛型的使用
+
+我们可以通过使用泛型来方便程序的设计，一般泛型可以用在类，方法，接口上，我们一一举例。
+
+* 自定义泛型类及泛型方法
+```c#
+//定义一个泛型类
+class Person<T>
+{
+  private int age;    //定义私有字段
+  private string name;
+
+  public int Age    //定义属性
+  {
+    get{return age;}
+    set{age = value;}
+  }
+
+  //定义构造函数给字段赋值
+  public Person(int age, string name)   
+  {
+    this.age = age;
+    this.name = name;
+  }
+
+  //定义方法，参数的类型未知，但是会随着创建该类的对象时指定的类型的变化而变化
+  public void Show1(T t)
+  {
+    Console.WriteLine(t);   //打印传进来的参数
+  }
+
+
+  //定义泛型方法，参数类型随着调用方法时指定类型的变化而变化，这个类型不受该类泛型的影响，是独立的。
+  public void Show2<Q>(Q q)
+  {
+    Console.WriteLine(q);   //打印参数
+  }
+}
+
+class Demo
+{
+  static void Main(string[] args)
+  {
+    //创建Person对象，指定string类型，string会影响Show1方法，但不会影响Show2方法。
+    Person<string> p = new Person<string>(20, "旺财");  
+	
+    //这里的参数类型必须是string类型，因为类里面定义的是T。结果为"你好"
+    p.Show1("你好");  
+	
+    /*
+	这个是泛型方法，调用时虚指定具体类型，指定int后，
+    这个方法的参数必须为int类型。
+    这个类型不受类的影响。结果为30
+    */
+    p.Show2<int>(30);   
+  }
+}
+
+泛型方法不一定要定义在泛型类中，也可以定义在非泛型类中：
+
+class Person
+{
+  //泛型方法。
+  public void Show<T>(T t)
+  {
+    Console.WriteLine(t);
+  }
+}
+
+class Demo
+{
+  static void Main(string[] args)
+  {
+    Person p = new Person();  //创建Person对象
+    p.Show<double>(2.4);  //使用时只需要指定具体类型即可，结果为2.4
+  }
+}
+```
+* 泛型接口
+泛型还可以应用到接口中：
+
+```c#
+//普通接口：
+interface NormalInterface
+{
+  void Show();
+}
+
+//泛型接口
+interface GenericInterface<T>
+{
+  void Show(T t);//这个方法的参数类型随着接口的类型变化
+
+  void Show2(int i);//普通方法
+
+  void Show3<Q>(Q q);//在泛型接口中额外定义其他泛型类型的方法
+}
+
+//实现泛型接口，指定为string类型
+class Person : GenericInterface<string>
+{
+  //重新实现Show方法，需要指定为和接口的泛型类型一样。调用该方法时直接传入string类型字符串
+  public void Show(string str)
+  {
+    Console.WriteLine(str);
+  }
+
+  //重新实现Show2方法
+  public void Show2(int i)
+  {
+    Console.WriteLine(i);
+  }
+
+  //重新实现Show3方法，该方法的泛型类型和接口无关，不能指定具体泛型类型，只能在调用时指定。
+  public void Show3<Q>(Q q)
+  {
+    Console.WriteLine(q);
+  }
+}
+
+class Demo
+{
+  static void Main(string[] args)
+  {
+    Person p = new Person();  //创建Person对象
+    p.Show("旺财");  //调用方法，传入字符串类型，结果为旺财
+    p.Show2(10);    //普通方法，结果为10
+    p.Show3<double>(2.5); //调用泛型方法，指定泛型方法类型为double，传入double类型，结果为2.5
+  }
+}
+```
+总结：
+
+以上便是泛型的应用，我们应该掌握泛型的优点及设计方式。总的来说，泛型的出现解决了类型安全的问题，使得我们在应用集合和设计代码上能够更统一和方便，同时，泛型还在一定程度上解决了方法重载的繁琐。
+
